@@ -1,0 +1,8 @@
+paths:
+  public_questions: "data/public/questions_public.xlsx"
+  public_answers:   "data/public/answers_public.json"
+  submission_schema: "configs/submission.schema.json"
+dq:
+  link_check_allow_empty: false
+  allow_scientific_notation: false
+  page_number_base: 1   # 1-based страницы в сабмите
