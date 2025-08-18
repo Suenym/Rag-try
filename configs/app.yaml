@@ -8,9 +8,15 @@ ingest:
   corrupt_font_ratio: 0.15
   page_sample_for_manual: 20
 ocr:
-  languages: ["rus","kaz"]
-  profiles: {A: {psm: 6, oem: "lstm"}, B: {psm: 4, oem: "lstm"}}
-  parallelism: 2
+  languages: ["rus", "kaz"]                           # <- change if 'kaz' not installed
+  profiles:
+    A: { psm: 6, oem: "lstm" }
+    B: { psm: 4, oem: "lstm" }
+  parallelism: 2                                      # (not used here; reserved for future threading)
+  dpi: 250                                            # <- 200 is faster; 300 can improve quality
+  progress_every: 100                                 # <- heartbeat frequency
+  use_public_whitelist: true                          # <- set true to hit coverage fast
+  tesseract_cmd: "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"   # <- WINDOWS PATH (adjust!)
 tables:
   prefer: ["lattice","stream","scan"]
 normalize:
@@ -22,3 +28,6 @@ dq:
   link_check_allow_empty: false
   allow_scientific_notation: false
   page_number_base: 1
+
+
+

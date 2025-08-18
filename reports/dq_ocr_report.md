@@ -1,13 +1,4 @@
 # DQ OCR Report
 
-## Покрытие
-TODO
+Успешных страниц: 27 из 27 (100.00%)
 
-## Распределение proxy-CER
-TODO
-
-## Risk-pages
-TODO
-
-## Fallback-решения
-TODO

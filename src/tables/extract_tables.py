@@ -5,6 +5,20 @@ import pandas as pd
 import yaml
 
 
+OUT_COLS = ["doc_name","page_number","table_id","row_idx","row_text"]
+
+def save_tables(df, out_path):
+    out = Path(out_path)
+    if df is None or df.empty:
+        print("[tables] no tables -> writing empty schema")
+        pd.DataFrame(columns=OUT_COLS).to_parquet(out, index=False)
+    else:
+        # guarantee required columns exist
+        for col in OUT_COLS:
+            if col not in df.columns:
+                df[col] = None
+        df[OUT_COLS].to_parquet(out, index=False)
+
 def _load_configs() -> tuple[dict, dict]:
     with open("configs/app.yaml", "r", encoding="utf-8") as f:
         app = yaml.safe_load(f)
