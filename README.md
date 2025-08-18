@@ -4,6 +4,13 @@
 
 Цель: жёсткая фиксация формата сабмита, валидатор JSON, первичная интеграция публичных данных, DQ-отчёт.
 
+## Как запустить конвейер (ingest→OCR→tables→normalize→DQ→findability)
+```bash
+PYTHONPATH=. python -m src.cli.ingest_pages --in data/corpus --out data/cache
+PYTHONPATH=. python -m src.cli.ocr_tables_normalize
+PYTHONPATH=. python -m src.cli.findability_public
+```
+
 ## Быстрый старт
 ```bash
 # 1) Установка
