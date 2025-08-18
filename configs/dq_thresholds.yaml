@@ -1,0 +1,13 @@
+ocr:
+  cer_max: 0.05
+  suspect_char_ratio_max: 0.03
+  max_retry_profiles: 2
+tables:
+  struct_valid_min: 0.7
+  numeric_ratio_min: 0.2
+  header_required: true
+normalize:
+  require_sign_preserved: true
+  forbid_unintended_rounding: true
+public:
+  answer_findability_target: 0.90   # цель на следующем этапе, пока специфика
