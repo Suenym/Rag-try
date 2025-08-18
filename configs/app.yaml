@@ -2,7 +2,23 @@ paths:
   public_questions: "data/public/questions_public.xlsx"
   public_answers:   "data/public/answers_public.json"
   submission_schema: "configs/submission.schema.json"
+ingest:
+  text_min_len: 80
+  badchars_max_ratio: 0.02
+  corrupt_font_ratio: 0.15
+  page_sample_for_manual: 20
+ocr:
+  languages: ["rus","kaz"]
+  profiles: {A: {psm: 6, oem: "lstm"}, B: {psm: 4, oem: "lstm"}}
+  parallelism: 2
+tables:
+  prefer: ["lattice","stream","scan"]
+normalize:
+  hyphen_fix_enabled: true
+  thousand_sep_allowed: [" ", "\u00A0"]
+  decimal_separators: [",", "."]
+  accept_percent_without_symbol: false
 dq:
   link_check_allow_empty: false
   allow_scientific_notation: false
-  page_number_base: 1   # 1-based страницы в сабмите
+  page_number_base: 1
