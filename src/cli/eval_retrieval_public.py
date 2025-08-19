@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 import json
+import re
 import pandas as pd
 import typer
 
@@ -21,30 +22,37 @@ def _load_app_cfg() -> dict:
         return yaml.safe_load(f) or {}
 
 
+def _light_answer_norm(s: str) -> str:
+    if s is None:
+        return ""
+    s = str(s)
+    s = s.replace("«", '"').replace("»", '"')
+    s = s.replace("\u00A0", " ")
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
+
 def _load_public_qa(app_cfg: dict) -> List[Dict[str, Any]]:
     """Склеиваем вопросы (xlsx) и ответы (json) в единый список dict-ов."""
     a_path = Path(app_cfg["paths"]["public_answers"])
     q_path = Path(app_cfg["paths"]["public_questions"])
 
-    with open(a_path, "r", encoding="utf-8") as f:
+    with open(a_path, "r", encoding="utf-8-sig") as f:
         answers = json.load(f)
 
     dfa = pd.DataFrame(answers)
-    # ответ может быть разного типа -> приведём к строке для matcher-а, а оригинал сохраним
     dfa["answer_raw"] = dfa["answer"]
-    dfa["answer"] = dfa["answer"].astype(str)
+    dfa["answer"] = dfa["answer"].map(_light_answer_norm)
 
     dfq = pd.read_excel(q_path)
 
-    # Автоопределение колонки с текстом вопроса
     q_col = None
-    for cand in ["question", "query", "full_question", "text", "q"]:
+    for cand in ["question", "query", "full_question"]:
         if cand in dfq.columns:
             q_col = cand
             break
     if not q_col:
-        raise ValueError("В файле вопросов нет подходящей колонки с текстом вопроса "
-                         "(ожидались: question | query | full_question | text | q)")
+        raise ValueError("В файле вопросов нет подходящей колонки с текстом вопроса (question | query | full_question)")
     typer.echo(f"ℹ️ Колонка с вопросом: '{q_col}'")
 
     # Оставим минимум нужного
@@ -73,11 +81,17 @@ def _search_candidates(
     k: int,
     reranker: Optional[Reranker],
     rerank_topn: int,
+    hybrid: bool = False,
 ) -> List[Dict[str, Any]]:
     """Достаём кандидатов и (опц.) переранжируем."""
-    # если есть reranker — нужно оверфетчить достаточно кандидатов
-    fetch_k = max(k, min(max(k * 5, k), rerank_topn) if reranker else k)
-    hits = retr.search(query, k=fetch_k, overfetch=fetch_k if reranker else None)
+    if reranker:
+        fetch_k = max(rerank_topn, 5 * k)
+    else:
+        fetch_k = k
+    if hybrid:
+        hits = retr.search_hybrid(query, k=fetch_k)
+    else:
+        hits = retr.search(query, k=fetch_k, overfetch=fetch_k if reranker else None)
     if reranker:
         hits = reranker.rerank(query, hits, top_k=k)
     else:
@@ -94,6 +108,7 @@ def main(
     rerank_model: Optional[str] = typer.Option(None, "--rerank-model"),
     rerank_topn: int = typer.Option(50, "--rerank-topn", help="сколько кандидатов переранжировать"),
     dump_topk: Optional[str] = typer.Option(None, "--dump-topk", help="путь к CSV с топ-K результатами"),
+    hybrid: bool = typer.Option(False, "--hybrid", help="гибридный BM25+dense поиск"),
 ):
     # 1) данные
     app_cfg = _load_app_cfg()
@@ -115,7 +130,7 @@ def main(
         answer_str = str(item["answer"])  # для релакс-паттернов
         answer_raw = item.get("answer_raw")
 
-        hits = _search_candidates(retr, query, k, rr, rerank_topn)
+        hits = _search_candidates(retr, query, k, rr, rerank_topn, hybrid=hybrid)
 
         # подготовка паттернов на каждый вопрос (один раз)
         pat_list = relaxed_answer_match.compile_patterns(answer_str)
@@ -146,13 +161,21 @@ def main(
                 top10 += 1
                 mrr10_sum += 1.0 / rank_found
 
+        hit_score = ""
+        doc_name = ""
+        page_number = ""
+        if rank_found is not None:
+            hit = hits[rank_found - 1]
+            doc_name = hit.get("doc_name", "")
+            page_number = hit.get("page_number", "")
+            hit_score = hit.get("rerank_score", hit.get("score", ""))
         details_rows.append({
             "qid": qid,
             "top_hit_rank": "MISS" if rank_found is None else rank_found,
-            "doc_name": "" if rank_found is None else hits[rank_found-1]["doc_name"],
-            "page_number": "" if rank_found is None else hits[rank_found-1]["page_number"],
+            "doc_name": doc_name,
+            "page_number": page_number,
             "matched_pattern": matched_pat,
-            "score": hits[0]["rerank_score"] if (hits and "rerank_score" in hits[0]) else (hits[0]["score"] if hits else 0.0),
+            "score": hit_score,
         })
 
         # дампим весь топ-K по каждому вопросу, если попросили
@@ -162,12 +185,14 @@ def main(
                     "question_id": qid,
                     "question": query,
                     "answer_raw": answer_raw,
+                    "answer_type": type(answer_raw).__name__ if answer_raw is not None else "",
                     "rank": rank,
-                    "doc_name": h["doc_name"],
-                    "page_number": h["page_number"],
                     "score": h.get("score"),
                     "rerank_score": h.get("rerank_score"),
+                    "doc_name": h["doc_name"],
+                    "page_number": h["page_number"],
                     "preview": h.get("preview", ""),
+                    "matched_pattern": matched_pat if rank_found == rank else "",
                 })
 
     n = max(len(qa), 1)
