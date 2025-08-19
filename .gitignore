@@ -4,3 +4,20 @@ __pycache__/
 *.parquet
 .DS_Store
 submission/*.json
+cat >> .gitignore << 'EOF'
+# Python venv
+env/
+
+# Data caches / indices / diagnostics
+data/index*/
+data/cache/
+data/diagnostics/
+
+# Reports (generated)
+reports/*.csv
+# Если НЕ хотим версионировать отчёт:
+reports/*.md
+
+# Editors
+.vscode/
+EOF
