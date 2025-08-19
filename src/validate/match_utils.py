@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Iterable
 
 
 # --- Нормализация текста -----------------------------------------------------
@@ -41,24 +41,53 @@ def _norm(s: str) -> str:
     return s.strip()
 
 
+def _mojibake_variants(s: str) -> List[str]:
+    """Возвращает список возможных «кракозябренных» вариантов строки.
+
+    Эвристика: пробуем перекодировать latin1/cp1252/cp1251 ↔ utf-8 и
+    оставляем наиболее кириллические версии. Это помогает матчить тексты,
+    где исходная строка была испорчена неверной декодировкой.
+    """
+
+    variants: set[str] = set()
+    enc_pairs: Iterable[tuple[str, str]] = [
+        ("latin1", "utf-8"),
+        ("cp1252", "utf-8"),
+        ("cp1251", "utf-8"),
+        ("utf-8", "latin1"),
+        ("utf-8", "cp1252"),
+        ("utf-8", "cp1251"),
+    ]
+    for src_enc, dst_enc in enc_pairs:
+        try:
+            v = s.encode(src_enc, errors="ignore").decode(dst_enc, errors="ignore")
+            variants.add(v)
+        except Exception:
+            pass
+
+    variants.discard(s)
+
+    def cyr_score(text: str) -> int:
+        return len(re.findall(r"[А-Яа-яЁё]", text))
+
+    # сортируем по количеству кириллицы, оставляем наиболее правдоподобные
+    return sorted(variants, key=cyr_score, reverse=True)[:3]
+
 # --- Построение паттернов ----------------------------------------------------
 
 
-def _tokens_pattern(answer: str) -> str:
+_GAP = r"[ \t\r\n\.,;:!?\-–—\"'()]{0,3}"
+
+
+def _tokens_pattern(answer: str, gap: str = _GAP) -> str:
     """
-    «Склеивающий» паттерн по токенам: разрешаем любые не-алфавитно-цифровые
-    символы между токенами. Это ловит варианты вроде `L.A.C. Holding`,
-    `L A C Holding`, кавычки/скобки/дефисы между словами и т.п.
+    Паттерн по токенам с небольшим допуском на знаки/пробелы между ними.
+    Используем как основу для текстовых ответов.
     """
-    # целые/десятичные числа выделим отдельно в compile_patterns()
-    # здесь нам нужны слова/буквы/цифры как токены
     toks = re.findall(r"\w+|\d+[.,]\d+|\d+", answer, flags=re.UNICODE)
     if not toks:
         return re.escape(answer)
-
-    # \W* между токенами: любые не-словарные символы (точки, пробелы, кавычки...)
-    # границы слова по краям помогают избегать «прилипаний» к соседним словам
-    return r"\b" + r"\W*".join(map(re.escape, toks)) + r"\b"
+    return r"\b" + gap.join(map(re.escape, toks)) + r"\b"
 
 
 @dataclass
@@ -83,42 +112,54 @@ class RelaxedAnswerMatch:
         as_str = str(answer).strip()
         as_str_norm = _norm(as_str)
 
-        # чисто цифры (целое), допускаем, что внутри могли быть пробелы как разделители тысяч
+        # чисто цифры (целое), допускаем разделители тысяч
         only_digits = re.fullmatch(r"\d+(?:\s+\d+)*", as_str_norm)
-        # десятичное с точкой/запятой (возможны пробелы вокруг разделителя)
-        decimal_match = re.fullmatch(r"\d+(?:\s*[.,]\s*\d+)", as_str_norm)
+        # десятичное число с точкой или запятой и опциональными разделителями тысяч
+        decimal_match = re.fullmatch(
+            r"\d+(?:\s+\d+)*(?:\s*[.,]\s*\d+)", as_str_norm
+        )
 
         if only_digits:
-            digits = re.sub(r"\s+", "", as_str_norm)  # убираем разделители тысяч
-            # 1) точное число (без прилегающих цифр)
+            digits = re.sub(r"\s+", "", as_str_norm)
             p1 = rf"(?<!\d){re.escape(digits)}(?!\d)"
-            # 2) тот же набор цифр, но с допуском пробелов/NBSP/узкого пробела между ЛЮБЫМИ цифрами
-            spaced = r"".join([re.escape(d) + r"[\s\u00A0\u2009]*" for d in digits])
+            spaced = r"".join(
+                [re.escape(d) + r"[\s\u00A0\u2009]*" for d in digits]
+            )
             p2 = rf"(?<!\d){spaced}(?!\d)"
             return [p1, p2]
 
         if decimal_match:
-            # приводим к точке как «каноническому» варианту
             canon = re.sub(r"\s*", "", as_str_norm.replace(",", "."))
             head, tail = canon.split(".", 1)
-            # допускаем пробелы вокруг разделителя и сам разделитель , или .
-            p = rf"(?<!\d){re.escape(head)}[\s\u00A0\u2009]*[.,][\s\u00A0\u2009]*{re.escape(tail)}(?!\d)"
-            return [p]
+            p1 = (
+                rf"(?<!\d){re.escape(head)}[\s\u00A0\u2009]*[.,][\s\u00A0\u2009]*{re.escape(tail)}(?!\d)"
+            )
+            spaced_head = "".join(
+                [re.escape(d) + r"[\s\u00A0\u2009]*" for d in head]
+            )
+            spaced_tail = "".join(
+                [re.escape(d) + r"[\s\u00A0\u2009]*" for d in tail]
+            )
+            p2 = (
+                rf"(?<!\d){spaced_head}[\s\u00A0\u2009]*[.,][\s\u00A0\u2009]*{spaced_tail}(?!\d)"
+            )
+            return [p1, p2]
 
         # --- ТЕКСТ -----------------------------------------------------------
         s = _norm(as_str)
         if not s:
             return []
 
-        # основной «склеивающий» паттерн по токенам
-        p_main = _tokens_pattern(s)
+        variants = [s] + _mojibake_variants(s)
+        patterns: List[str] = []
+        for v in variants:
+            v_norm = _norm(v)
+            patterns.append(_tokens_pattern(v_norm, gap=_GAP))
+            patterns.append(_tokens_pattern(v_norm, gap=r"\W*"))
 
-        # запасной вариант: чуть строже, только ограниченный набор знаков между словами
-        toks = [re.escape(t) for t in re.split(r"\s+", s)]
-        gap_lite = r"[ \t\r\n\.,;:!?\-–—\"'()]{0,3}"
-        p_lite = gap_lite.join(toks)
-
-        return [p_main, p_lite]
+        # удалим дубли, сохраняя порядок
+        seen = {}
+        return [seen.setdefault(p, p) for p in patterns if p not in seen]
 
     def any_match(self, text: str, patterns: List[str]) -> Tuple[bool, str]:
         """
