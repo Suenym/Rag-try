@@ -1,0 +1,212 @@
+[
+  {
+    "question_id": 1,
+    "relevant_chunks": [
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 14
+      },
+      {
+        "document_name": "tcom_af_4_2025.pdf",
+        "page_number": 2
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 2,
+    "relevant_chunks": [
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 161
+      },
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 85
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 3,
+    "relevant_chunks": [
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 409
+      },
+      {
+        "document_name": "tmjlf6_2024_cons_rus.pdf",
+        "page_number": 41
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 4,
+    "relevant_chunks": [
+      {
+        "document_name": "fpstp_2024_rus.pdf",
+        "page_number": 31
+      },
+      {
+        "document_name": "bastp_2024_rus.pdf",
+        "page_number": 9
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 5,
+    "relevant_chunks": [
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 58
+      },
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 267
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 6,
+    "relevant_chunks": [
+      {
+        "document_name": "tmjl_af_1_2025.pdf",
+        "page_number": 50
+      },
+      {
+        "document_name": "tmjl_af_1_2025.pdf",
+        "page_number": 46
+      }
+    ],
+    "answer": 4
+  },
+  {
+    "question_id": 7,
+    "relevant_chunks": [
+      {
+        "document_name": "fpstp_2024_rus.pdf",
+        "page_number": 7
+      },
+      {
+        "document_name": "matnp_2024_rus.pdf",
+        "page_number": 14
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 8,
+    "relevant_chunks": [
+      {
+        "document_name": "kztkf5m1_2025_cons_rus_pdf.pdf",
+        "page_number": 24
+      },
+      {
+        "document_name": "rahtp_2024_rus.pdf",
+        "page_number": 58
+      }
+    ],
+    "answer": 300
+  },
+  {
+    "question_id": 9,
+    "relevant_chunks": [
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 89
+      },
+      {
+        "document_name": "matnp_2024_rus.pdf",
+        "page_number": 43
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 10,
+    "relevant_chunks": [
+      {
+        "document_name": "kztkp_2024_rus.pdf",
+        "page_number": 78
+      },
+      {
+        "document_name": "matnp_2024_rus.pdf",
+        "page_number": 68
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 11,
+    "relevant_chunks": [
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 11
+      },
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 29
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 12,
+    "relevant_chunks": [
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 74
+      },
+      {
+        "document_name": "bastp_2024_rus.pdf",
+        "page_number": 74
+      }
+    ],
+    "answer": 25
+  },
+  {
+    "question_id": 13,
+    "relevant_chunks": [
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 263
+      },
+      {
+        "document_name": "tmjl_2024_rus.pdf",
+        "page_number": 249
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 14,
+    "relevant_chunks": [
+      {
+        "document_name": "airap_2024_rus.pdf",
+        "page_number": 68
+      },
+      {
+        "document_name": "tcibp_2024_rus.pdf",
+        "page_number": 20
+      }
+    ],
+    "answer": "N/A"
+  },
+  {
+    "question_id": 15,
+    "relevant_chunks": [
+      {
+        "document_name": "kztkp_2024_rus.pdf",
+        "page_number": 101
+      },
+      {
+        "document_name": "kztkp_2024_rus.pdf",
+        "page_number": 100
+      }
+    ],
+    "answer": 18257
+  }
+]
