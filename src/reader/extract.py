@@ -25,6 +25,15 @@ STOPWORDS_TITLE = {"главный", "финансовый", "республик
 def _norm(s: str) -> str:
     return (s or "").replace(NBSP, " ")
 
+
+def cleanup_hyphenation(text: str) -> str:
+    """Remove hyphenation "-\n" and collapse newlines to spaces."""
+    if not text:
+        return ""
+    text = text.replace("-\n", "")
+    text = re.sub(r"\n+", " ", text)
+    return text
+
 def _first_match(pat: re.Pattern, text: str):
     m = pat.search(text)
     if m:
@@ -325,7 +334,7 @@ def extract_answer_from_hits(question: str, hits: List[Dict], topk: int = 5) -> 
     atype = detect_answer_type(question)
     text_pool, idx_map = [], []
     for i, h in enumerate(hits[:max(1, topk)]):
-        t = str(h.get("preview", "") or "")
+        t = cleanup_hyphenation(str(h.get("preview", "") or ""))
         if t:
             text_pool.append(t)
             idx_map.append(i)
