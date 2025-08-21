@@ -186,7 +186,9 @@ def main(
         rank_found: Optional[int] = None
         matched_pat = ""
         for rank, h in enumerate(hits, start=1):
-            ok, pat = relaxed_answer_match.any_match(h.get("preview", ""), pat_list)
+            text = h.get("text") or h.get("preview", "")
+            ok, pat = relaxed_answer_match.any_match(text, pat_list)
+
             if ok:
                 rank_found = rank
                 matched_pat = pat

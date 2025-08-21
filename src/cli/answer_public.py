@@ -68,8 +68,8 @@ def main(
             hits = rr.rerank(q, hits, top_k=overfetch)
         hits = hits[:k]
 
-        ans = extract_answer_from_hits(q, hits, topk=min(3, len(hits)))
-        best_idx = linkcheck(ans.value, ans.atype, hits, topk=min(3, len(hits)))
+        ans = extract_answer_from_hits(q, hits, topk=min(5, len(hits)))
+        best_idx = linkcheck(ans.value, ans.atype, hits, topk=min(5, len(hits)))
 
         rel: List[Dict[str, Any]] = []
         if best_idx >= 0:

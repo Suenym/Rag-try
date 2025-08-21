@@ -35,17 +35,21 @@ def number_variants(x) -> List[str]:
         out.update({with_spaces, with_spaces.replace(" ", "\u00A0")})
     return list(out)
 
-
 def linkcheck(answer_value, atype: str, hits: List[Dict], topk: int = 3) -> int:
-    """Возвращает индекс хита, подтверждающего ответ, либо -1."""
     pool = hits[:topk]
-    if atype in ("int", "float"):
+    if atype in ("int","float"):
         variants = number_variants(answer_value)
+        q = ""  # передавайте сюда исходный вопрос при желании усилить проверку
         for i, h in enumerate(pool):
             text = (h.get("preview") or "")
+            low = text.lower()
             for v in variants:
-                if v and v in text:
-                    return i
+                pos = low.find(v.lower())
+                if v and pos >= 0:
+                    # рядом должно быть одно из смысловых слов (очень простой вариант)
+                    ctx = low[max(0,pos-48):pos+len(v)+48]
+                    if re.search(r"(тонн|выброс|частот|рейс|работник|дивиденд|убыт|капитал|рентабел|бухгалтер|директор)", ctx):
+                        return i
         return -1
     else:
         tgt = norm_space(str(answer_value))
